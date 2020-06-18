@@ -15,6 +15,8 @@ package main
 import (
 	"context"
 	"fmt"
+	"net/http"
+	"net/http/pprof"
 	"os"
 	"os/signal"
 	"path/filepath"
@@ -162,6 +164,20 @@ func init() {
 }
 
 func main() {
+	log.Info("Starting pprof endpoint on :6060")
+	pprofMux := http.NewServeMux()
+	pprofMux.HandleFunc("/debug/pprof/", pprof.Index)
+	pprofMux.HandleFunc("/debug/pprof/cmdline", pprof.Cmdline)
+	pprofMux.HandleFunc("/debug/pprof/profile", pprof.Profile)
+	pprofMux.HandleFunc("/debug/pprof/symbol", pprof.Symbol)
+	pprofMux.HandleFunc("/debug/pprof/trace", pprof.Trace)
+	server := &http.Server{Addr: ":6060", Handler: pprofMux}
+	go func() {
+		if err := server.ListenAndServe(); err != nil {
+			log.Error(err, "serving pprof endpoint failed")
+			os.Exit(1)
+		}
+	}()
 
 	// Create a new Kuberhealthy struct
 	kuberhealthy = NewKuberhealthy()

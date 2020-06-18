@@ -391,6 +391,7 @@ func (ext *Checker) watchForCheckerPodShutdown(shutdownEventNotifyC chan struct{
 	}
 
 	// start a new watcher with the api
+	ext.log("start pod watcher 54321")
 	watcher := ext.startPodWatcher(listOptions, ctx)
 
 	// use the watcher to wait for a deleted event
@@ -401,6 +402,7 @@ func (ext *Checker) watchForCheckerPodShutdown(shutdownEventNotifyC chan struct{
 	// whenever this func ends, remember to clean up the watcher if its provisioned
 	defer func() {
 		if watcher != nil {
+			ext.log("clean up the watcher 12345")
 			watcher.Stop()
 		}
 	}()
@@ -410,7 +412,12 @@ func (ext *Checker) watchForCheckerPodShutdown(shutdownEventNotifyC chan struct{
 		select {
 		case <-stoppedChan: // the watcher has stopped
 			// re-create a watcher and restart it if it closes for any reason
+			if watcher != nil {
+				watcher.Stop()
+			}
+			ext.log("start PodWatcher 666")
 			watcher = ext.startPodWatcher(listOptions, ctx)
+			ext.log("start PodWatcher 12345")
 			go ext.waitForDeletedEvent(watcher.ResultChan(), sawRemovalChan, stoppedChan) // restart the watch
 		case <-sawRemovalChan: // we saw the watched pod remove
 			ext.log("pod shutdown monitor witnessed the checker pod being removed")
@@ -443,6 +450,7 @@ func (ext *Checker) startPodWatcher(listOptions metav1.ListOptions, ctx context.
 		default:
 		}
 
+		log.Infoln("Watching for pod 2 to exist.")
 		// start a new watch request
 		watcher, err := podClient.Watch(listOptions)
 
@@ -538,7 +546,7 @@ func (ext *Checker) newError(s string) error {
 // RunOnce runs one check loop.  This creates a checker pod and ensures it starts,
 // then ensures it changes to Running properly
 func (ext *Checker) RunOnce() error {
-
+	ext.log("Checker RunOnce")
 	// create a context for this run
 	ext.shutdownCTX, ext.shutdownCTXFunc = context.WithCancel(context.Background())
 
@@ -955,7 +963,7 @@ func (ext *Checker) waitForPodStart() chan error {
 	podClient := ext.KubeClient.CoreV1().Pods(ext.Namespace)
 
 	go func() {
-
+		ext.log("Started go routine waitForPodStart 3")
 		ext.wg.Add(1)
 		defer ext.wg.Done()
 
@@ -976,6 +984,7 @@ func (ext *Checker) waitForPodStart() chan error {
 				return
 			}
 			// start watching
+			log.Infoln("Watching for pod 3 to exist.")
 			watcher, err := podClient.Watch(metav1.ListOptions{
 				LabelSelector: kuberhealthyRunIDLabel + "=" + ext.currentCheckUUID,
 			})

@@ -241,6 +241,7 @@ func cleanUpOrphanedService() error {
 
 	go func() {
 		defer close(cleanUpChan)
+		log.Infoln("Watching for service 2 to exist.")
 
 		// Watch that it is gone.
 		watch, err := client.CoreV1().Services(checkNamespace).Watch(metav1.ListOptions{

@@ -420,6 +420,7 @@ func cleanUpOrphanedDeployment() error {
 	go func() {
 		defer close(cleanUpChan)
 
+		log.Infoln("Watching for deployment 2 to exist.")
 		// Watch that it is gone.
 		watch, err := client.AppsV1().Deployments(checkNamespace).Watch(metav1.ListOptions{
 			Watch:         true,
@@ -547,6 +548,7 @@ func updateDeployment(deploymentConfig *v1.Deployment) chan DeploymentResult {
 			return
 		}
 
+		log.Infoln("Watching for deployment to exist.")
 		// Watch that it is up.
 		watch, err := client.AppsV1().Deployments(checkNamespace).Watch(metav1.ListOptions{
 			Watch:         true,

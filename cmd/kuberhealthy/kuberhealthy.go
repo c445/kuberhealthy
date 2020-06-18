@@ -546,6 +546,7 @@ func (k *Kuberhealthy) masterStatusWatcher(ctx context.Context) {
 		// don't retry our watch too fast
 		time.Sleep(time.Second * 5)
 
+		log.Infoln("Watching for pod to exist.")
 		// setup a pod watching client for kuberhealthy pods
 		watcher, err := kubernetesClient.CoreV1().Pods(podNamespace).Watch(metav1.ListOptions{
 			LabelSelector: "app=kuberhealthy",
