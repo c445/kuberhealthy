@@ -5,13 +5,13 @@ RUN mkdir /kuberhealthy
 
 WORKDIR /go/src/github.com/Comcast/kuberhealthy/
 COPY go.* ./
-RUN go mod download
+#RUN go mod download
 COPY ./ ./
 WORKDIR /go/src/github.com/Comcast/kuberhealthy/cmd/kuberhealthy
 ENV CGO_ENABLED=0
 # RUN go version
 #RUN go test -v -short -- --debug --forceMaster
-RUN go build -v -o kuberhealthy
+RUN go build -mod=vendor -v -o kuberhealthy
 RUN mv kuberhealthy /kuberhealthy/kuberhealthy
 
 FROM golang:1.13
