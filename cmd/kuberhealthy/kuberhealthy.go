@@ -621,7 +621,7 @@ func (k *Kuberhealthy) masterMonitor(ctx context.Context, becameMasterChan chan 
 			log.Println("control: waiting for master changes to settle...")
 			continue
 		}
-
+		upcomingMasterState = true
 		// dupe the global to prevent races
 		goingToBeMaster := upcomingMasterState
 

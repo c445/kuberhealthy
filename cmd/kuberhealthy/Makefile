@@ -2,10 +2,10 @@
 # TAG="2.2.0"
 
 build:
-	docker build -t kuberhealthy/kuberhealthy:v2.2.1 -f Dockerfile ../../
+	docker build -t reg-dhc.app.corpintra.net/caas/kuberhealthy:v2.2.1-debug -f Dockerfile ../../
 
 push:
-	docker push kuberhealthy/kuberhealthy:v2.2.1
+	docker push reg-dhc.app.corpintra.net/caas/kuberhealthy:v2.2.1-debug
 
 test:
 	POD_NAME="kuberhealthy-test" go test -run TestWebServer -v -args -- --debug --forceMaster

@@ -4,4 +4,4 @@
 .DS_Store
 .old
 cmd/http-content-check/http-content-check
-vendor/
+

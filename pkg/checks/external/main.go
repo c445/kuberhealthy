@@ -1001,6 +1001,7 @@ func (ext *Checker) waitForPodStart() chan error {
 				if e.Type == watch.Deleted {
 					ext.log("the khcheck check pod is deleted, waiting for start failed!")
 					outChan <- ErrPodDeletedBeforeRunning
+					ext.log("the khcheck check pod is deleted, waiting for start failed! wrote")
 					watcher.Stop()
 					return
 				}
@@ -1020,6 +1021,7 @@ func (ext *Checker) waitForPodStart() chan error {
 					if containerStat.State.Waiting.Reason == "ErrImagePull" {
 						ext.log("pod had an error image pull")
 						outChan <- errors.New(containerStat.State.Waiting.Reason)
+						ext.log("pod had an error image pull wrote")
 						watcher.Stop()
 						return
 					}
@@ -1029,6 +1031,7 @@ func (ext *Checker) waitForPodStart() chan error {
 				if p.Status.Phase == apiv1.PodRunning || p.Status.Phase == apiv1.PodFailed || p.Status.Phase == apiv1.PodSucceeded {
 					ext.log("pod is now either running, failed, or succeeded")
 					outChan <- nil
+					ext.log("pod is now either running, failed, or succeeded wrote")
 					watcher.Stop()
 					return
 				}
@@ -1038,6 +1041,7 @@ func (ext *Checker) waitForPodStart() chan error {
 				case <-ext.shutdownCTX.Done():
 					ext.log("external checker pod startup watch aborted due to check context being aborted")
 					outChan <- nil
+					ext.log("external checker pod startup watch aborted due to check context being aborted wrote")
 					watcher.Stop()
 					return
 				default:
