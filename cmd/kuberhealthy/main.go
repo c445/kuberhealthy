@@ -13,6 +13,7 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"net/http"
@@ -20,6 +21,7 @@ import (
 	"os"
 	"os/signal"
 	"path/filepath"
+	"runtime"
 	"strconv"
 	"syscall"
 	"time"
@@ -163,8 +165,31 @@ func init() {
 	}
 }
 
+func getGID() uint64 {
+	b := make([]byte, 64)
+	b = b[:runtime.Stack(b, false)]
+	b = bytes.TrimPrefix(b, []byte("goroutine "))
+	b = b[:bytes.IndexByte(b, ' ')]
+	n, _ := strconv.ParseUint(string(b), 10, 64)
+	return n
+}
+
+type goroutineFormatter struct {
+	t log.Formatter
+}
+
+func (g goroutineFormatter) Format(e *log.Entry) ([]byte, error) {
+	f, err := g.t.Format(e)
+	if err != nil {
+		return f, err
+	}
+	return []byte(fmt.Sprintf("%d: %s", getGID(), f)), nil
+}
+
+
 func main() {
 	log.Info("Starting pprof endpoint on :6060")
+	log.SetFormatter(goroutineFormatter{t: new(log.TextFormatter)})
 	pprofMux := http.NewServeMux()
 	pprofMux.HandleFunc("/debug/pprof/", pprof.Index)
 	pprofMux.HandleFunc("/debug/pprof/cmdline", pprof.Cmdline)

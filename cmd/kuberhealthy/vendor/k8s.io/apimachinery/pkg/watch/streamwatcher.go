@@ -74,8 +74,9 @@ func NewStreamWatcher(d Decoder, r Reporter) *StreamWatcher {
 		// so nonbuffered is better.
 		result: make(chan Event),
 	}
+	parentGID := getGID()
 	cl := NewCodeLocation(5)
-	go sw.receive(cl.FullStackTrace)
+	go sw.receive(parentGID, cl.FullStackTrace)
 	return sw
 }
 
@@ -103,8 +104,8 @@ func (sw *StreamWatcher) stopping() bool {
 }
 
 // receive reads result from the decoder in a loop and sends down the result channel.
-func (sw *StreamWatcher) receive(s string) {
-	fmt.Printf("GoRoutine: Started watcher %q: %s\n", getGID(), s)
+func (sw *StreamWatcher) receive(parentGoRoutine uint64, s string) {
+	fmt.Printf("GoRoutine: Started watcher parent-id: %d, id :%d: %s\n", parentGoRoutine, getGID(), s)
 	defer close(sw.result)
 	defer sw.Stop()
 	defer utilruntime.HandleCrash()
