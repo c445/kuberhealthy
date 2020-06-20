@@ -90,7 +90,10 @@ func (sw *StreamWatcher) Stop() {
 	// Call Close() exactly once by locking and setting a flag.
 	sw.Lock()
 	defer sw.Unlock()
+	gid := getGID()
+	fmt.Printf("%d: streamwatcher: stop \n", gid)
 	if !sw.stopped {
+		fmt.Printf("%d: streamwatcher: set stopped\n", gid)
 		sw.stopped = true
 		sw.source.Close()
 	}
@@ -110,10 +113,14 @@ func (sw *StreamWatcher) receive(parentGoRoutine uint64, s string) {
 	defer sw.Stop()
 	defer utilruntime.HandleCrash()
 	for {
+		gid := getGID()
+		fmt.Printf("%d: streamwatcher: start for loop \n", gid)
 		action, obj, err := sw.source.Decode()
 		if err != nil {
+			fmt.Printf("%d: streamwatcher: start for loop if \n", gid)
 			// Ignore expected error.
 			if sw.stopping() {
+				fmt.Printf("%d: streamwatcher: start for loop stopping \n", gid)
 				return
 			}
 			switch err {
@@ -131,7 +138,10 @@ func (sw *StreamWatcher) receive(parentGoRoutine uint64, s string) {
 					}
 				}
 			}
+			fmt.Printf("%d: streamwatcher: start for loop return \n", gid)
 			return
+		} else {
+			fmt.Printf("%d: streamwatcher: start for loop: else \n", gid)
 		}
 
 		sw.result <- Event{
