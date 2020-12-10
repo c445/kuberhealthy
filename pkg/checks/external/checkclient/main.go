@@ -11,6 +11,10 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strconv"
+	"time"
+
+	"github.com/cenkalti/backoff"
 
 	"github.com/Comcast/kuberhealthy/v2/pkg/checks/external"
 	"github.com/Comcast/kuberhealthy/v2/pkg/checks/external/status"
@@ -18,6 +22,14 @@ import (
 
 // Debug can be used to enable output logging from the checkClient
 var Debug bool
+
+// Use exponential backoff for retries
+var exponentialBackoff = backoff.NewExponentialBackOff()
+const maxElapsedTime = time.Second * 30
+
+func init() {
+	exponentialBackoff.MaxElapsedTime = maxElapsedTime
+}
 
 // ReportSuccess reports a successful check run to the Kuberhealthy service. We
 // do not return an error here because failures will cause the managing
@@ -76,9 +88,14 @@ func sendReport(s status.Report) error {
 	writeLog("INFO: Using kuberhealthy reporting URL:", url)
 
 	// send to the server
-	// TODO - retry logic?  Maybe we want this to be sensitive on a failure...
-	resp, err := http.Post(url, "application/json", bytes.NewBuffer(b))
-	if err != nil {
+	var resp *http.Response
+	err = backoff.Retry(func() error {
+		var err error
+		writeLog("DEBUG: Making POST request to kuberhealthy:")
+		resp, err = http.Post(url, "application/json", bytes.NewBuffer(b))
+		return err
+	}, exponentialBackoff)
+	if err != nil || resp.StatusCode != http.StatusOK {
 		writeLog("ERROR: got an error sending POST to kuberhealthy:", err.Error())
 		return fmt.Errorf("bad POST request to kuberhealthy status reporting url: %w", err)
 	}
@@ -106,4 +123,23 @@ func getKuberhealthyURL() (string, error) {
 	}
 
 	return reportingURL, nil
+}
+
+// GetDeadline fetches the KH_CHECK_RUN_DEADLINE environment variable and returns it.
+// Checks are given up to the deadline to complete their check runs.
+func GetDeadline() (time.Time, error) {
+	unixDeadline := os.Getenv(external.KHDeadline)
+
+	if len(unixDeadline) < 1 {
+		writeLog("ERROR: kuberhealthy check deadline from environment variable", external.KHDeadline, "was blank")
+		return time.Time{}, fmt.Errorf("fetched %s environment variable but it was blank", external.KHDeadline)
+	}
+
+	unixDeadlineInt, err := strconv.Atoi(unixDeadline)
+	if err != nil {
+		writeLog("ERROR: unable to parse", external.KHDeadline+": "+err.Error())
+		return time.Time{}, fmt.Errorf("unable to parse %s: %s", external.KHDeadline, err.Error())
+	}
+
+	return time.Unix(int64(unixDeadlineInt), 0), nil
 }

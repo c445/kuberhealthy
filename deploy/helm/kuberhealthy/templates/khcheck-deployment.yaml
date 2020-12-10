@@ -6,16 +6,25 @@ metadata:
   name: deployment
   namespace: {{ .Release.Namespace }}
 spec:
-  runInterval: 10m
-  timeout: &deployment_check_timeout 15m
+  runInterval:  {{ .Values.check.deployment.runInterval }}
+  timeout: {{ .Values.check.deployment.timeout }}
   podSpec:
+    {{- if .Values.securityContext.enabled }}
+    securityContext:
+      runAsUser: {{ .Values.securityContext.runAsUser }}
+      fsGroup: {{ .Values.securityContext.fsGroup }}
+    {{- end}}
     containers:
     - name: deployment
+      {{- if .Values.imageRegistry }}
+      image: {{- .Values.imageRegistry }}/{{ .Values.check.deployment.image.repository }}:{{ .Values.check.deployment.image.tag }}
+      {{- else if .Values.check.deployment.image.registry }}
+      image: {{ .Values.check.deployment.image.registry }}/{{ .Values.check.deployment.image.repository }}:{{ .Values.check.deployment.image.tag }}
+      {{- else }}
       image: {{ .Values.check.deployment.image.repository }}:{{ .Values.check.deployment.image.tag }}
+      {{- end }}
       imagePullPolicy: IfNotPresent
       env:
-        - name: CHECK_TIME_LIMIT
-          value: *deployment_check_timeout
 {{- range $key, $value := .Values.check.deployment.extraEnvs }}
         - name: {{ $key }}
           value: {{ $value | quote }}
@@ -26,10 +35,19 @@ spec:
           memory: 15Mi
         limits:
           cpu: 40m
+{{- if .Values.securityContext.enabled }}
+      securityContext:
+        allowPrivilegeEscalation: {{ .Values.securityContext.allowPrivilegeEscalation }}
+        readOnlyRootFilesystem: {{ .Values.securityContext.readOnlyRootFilesystem }}
+{{- end}}
       restartPolicy: Never
     {{- if .Values.check.deployment.nodeSelector }}
     nodeSelector:
 {{- toYaml .Values.check.deployment.nodeSelector | nindent 6 }}
+    {{- end }}
+    {{- if .Values.check.deployment.tolerations }}
+    tolerations:
+{{- toYaml .Values.check.deployment.tolerations | nindent 6 }}
     {{- end }}
     serviceAccountName: deployment-sa
     terminationGracePeriodSeconds: 60
@@ -92,4 +110,3 @@ metadata:
   name: deployment-sa
   namespace: {{ .Release.Namespace }}
 {{- end }}
-

@@ -12,6 +12,7 @@
 package khstatecrd
 
 import (
+	"context"
 	"time"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -24,10 +25,9 @@ import (
 // the khstate custom resource
 type KuberhealthyStateClient struct {
 	restClient rest.Interface
-	ns         string
 }
 
-// ResetClient returns the rest client for easy listWatcher use
+// RestClient returns the rest client for easy listWatcher use
 func (c *KuberhealthyStateClient) RestClient() rest.Interface {
 	return c.restClient
 }
@@ -40,7 +40,7 @@ func (c *KuberhealthyStateClient) Create(state *KuberhealthyState, resource stri
 		Namespace(namespace).
 		Resource(resource).
 		Body(state).
-		Do().
+		Do(context.TODO()).
 		Into(&result)
 	return &result, err
 }
@@ -53,7 +53,7 @@ func (c *KuberhealthyStateClient) Delete(state *KuberhealthyState, resource stri
 		Namespace(namespace).
 		Resource(resource).
 		Name(name).
-		Do().
+		Do(context.TODO()).
 		Into(&result)
 	return &result, err
 }
@@ -68,7 +68,7 @@ func (c *KuberhealthyStateClient) Update(state *KuberhealthyState, resource stri
 		Resource(resource).
 		Body(state).
 		Name(name).
-		Do().
+		Do(context.TODO()).
 		Into(&result)
 	return &result, err
 }
@@ -82,7 +82,7 @@ func (c *KuberhealthyStateClient) Get(opts metav1.GetOptions, resource string, n
 		Resource(resource).
 		Name(name).
 		VersionedParams(&opts, scheme.ParameterCodec).
-		Do().
+		Do(context.TODO()).
 		Into(&result)
 	return &result, err
 }
@@ -95,21 +95,23 @@ func (c *KuberhealthyStateClient) List(opts metav1.ListOptions, resource string,
 		Namespace(namespace).
 		Resource(resource).
 		VersionedParams(&opts, scheme.ParameterCodec).
-		Do().
+		Do(context.TODO()).
 		Into(&result)
 	return &result, err
 }
 
 // Watch returns a watch.Interface that watches the requested clusterTestTypes.
-func (c *KuberhealthyStateClient) Watch(opts metav1.ListOptions) (watch.Interface, error) {
+func (c *KuberhealthyStateClient) Watch(opts metav1.ListOptions, resource string, namespace string) (watch.Interface, error) {
 	var timeout time.Duration
 	if opts.TimeoutSeconds != nil {
 		timeout = time.Duration(*opts.TimeoutSeconds) * time.Second
 	}
 	opts.Watch = true
+
 	return c.restClient.Get().
-		Resource("khstates").
+		Resource(resource).
+		Namespace(namespace).
 		VersionedParams(&opts, scheme.ParameterCodec).
 		Timeout(timeout).
-		Watch()
+		Watch(context.TODO())
 }

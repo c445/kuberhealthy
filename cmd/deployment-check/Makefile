@@ -1,5 +1,8 @@
+IMAGE="kuberhealthy/deployment-check"
+TAG="v1.7.0"
+
 build:
-	docker build -t kuberhealthy/deployment-check:v1.3.4 -f Dockerfile ../../
+	docker build -t ${IMAGE}:${TAG} -f Dockerfile ../../
 
 push:
-	docker push kuberhealthy/deployment-check:v1.3.4
+	docker push ${IMAGE}:${TAG}

@@ -12,6 +12,7 @@
 package main
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"net/http"
@@ -29,7 +30,7 @@ type RequestResult struct {
 
 // makeRequestToDeploymentCheckService attempts to make an HTTP request to the service
 // hostname and returns a boolean value. Returns a chan of errors.
-func makeRequestToDeploymentCheckService(hostname string) chan error {
+func makeRequestToDeploymentCheckService(ctx context.Context, hostname string) chan error {
 
 	requestChan := make(chan error)
 
@@ -138,7 +139,10 @@ func getRequestBackoff(hostname string) chan RequestResult {
 			if err == nil && resp.StatusCode == http.StatusOK {
 				log.Infoln("Successfully made an HTTP request on attempt:", attempts)
 				log.Infoln("Got a", resp.StatusCode, "with a", http.MethodGet, "to", hostname)
-				resp.Body.Close()
+				closeErr := resp.Body.Close()
+				if closeErr != nil {
+					log.Debugln("Failed to close response body:", closeErr.Error())
+				}
 				requestResult.Response = resp
 				requestResultChan <- requestResult
 				return
@@ -150,7 +154,10 @@ func getRequestBackoff(hostname string) chan RequestResult {
 
 			if resp != nil {
 				log.Debugln("Got a", resp.StatusCode)
-				resp.Body.Close()
+				closeErr := resp.Body.Close()
+				if closeErr != nil {
+					log.Debugln("Failed to close response body:", closeErr.Error())
+				}
 			}
 
 			retrySleep(attempts)
